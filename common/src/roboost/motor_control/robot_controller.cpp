@@ -1,5 +1,5 @@
 /**
- * @file velocity_controller.cpp
+ * @file robot_controller.cpp
  * @author Jakob Friedl (friedl.jak@gmail.com)
  * @brief Implementation of the VelocityController class.
  * @version 1.1
@@ -9,7 +9,7 @@
  *
  */
 
-#include <roboost/velocity_controller.hpp>
+#include <roboost/motor_control/robot_controller.hpp>
 
 using namespace roboost::robot_controller;
 using namespace roboost::motor_control;

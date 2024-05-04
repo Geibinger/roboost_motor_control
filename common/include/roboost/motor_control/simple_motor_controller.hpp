@@ -13,7 +13,7 @@
 #ifndef SIMPLE_MOTOR_CONTROLLER_H
 #define SIMPLE_MOTOR_CONTROLLER_H
 
-#include <roboost/motor_controller.hpp>
+#include <roboost/motor_control/motor_controller.hpp>
 
 namespace roboost
 {

@@ -12,7 +12,7 @@
 
 #include <Arduino.h>
 #include <algorithm>
-#include <roboost/motor-control/simple_motor_controller.hpp>
+#include <roboost/motor_control/simple_motor_controller.hpp>
 
 using namespace roboost::motor_control;
 

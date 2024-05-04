@@ -9,7 +9,7 @@
  *
  */
 
-#include <roboost/motor-control/motor_control_manager.hpp>
+#include <roboost/motor_control/motor_control_manager.hpp>
 
 using namespace roboost::motor_control;
 

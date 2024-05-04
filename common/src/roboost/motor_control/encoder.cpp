@@ -1,4 +1,4 @@
-#include <roboost/motor-control/encoder.hpp>
+#include <roboost/motor_control/encoder.hpp>
 
 using namespace roboost::motor_control;
 

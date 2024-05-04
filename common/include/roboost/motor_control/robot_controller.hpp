@@ -2,14 +2,14 @@
 #define VELOCITYCONTROLLER_H
 
 #ifdef JOINTSTATECONTROLLER_H
-#error "joint_state_controller.hpp and velocity_controller.hpp cannot be used at the same time!"
+#error "joint_state_controller.hpp and robot_controller.hpp cannot be used at the same time!"
 #endif
 
 #include <ArduinoEigen.h>
 #include <nav_msgs/msg/odometry.h>
 
 #include <roboost/kinematics/kinematics.hpp>
-#include <roboost/motor-control/motor_control_manager.hpp>
+#include <roboost/motor_control/motor_control_manager.hpp>
 
 namespace roboost
 {

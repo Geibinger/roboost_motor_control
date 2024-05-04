@@ -10,7 +10,7 @@
  */
 
 #include <Arduino.h>
-#include <roboost/motor-control/pid_motor_controller.hpp>
+#include <roboost/motor_control/pid_motor_controller.hpp>
 #include <roboost/utils/comparisons.hpp>
 
 using namespace roboost::motor_control;

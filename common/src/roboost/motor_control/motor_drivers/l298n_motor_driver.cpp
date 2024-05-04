@@ -9,7 +9,7 @@
  *
  */
 #include <Arduino.h>
-#include <roboost/motor-control/motor-drivers/l298n_motor_driver.hpp>
+#include <roboost/motor_control/motor_drivers/l298n_motor_driver.hpp>
 
 using namespace roboost::motor_control;
 

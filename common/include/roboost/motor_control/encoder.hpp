@@ -12,8 +12,8 @@
 #define ENCODER_H
 
 #include <Arduino.h>
-#include <utils/constants.h>
-#include <utils/timing.hpp>
+#include <roboost/utils/constants.h>
+#include <roboost/utils/timing.hpp>
 
 namespace roboost
 {
