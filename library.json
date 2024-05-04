@@ -1,0 +1,46 @@
+{
+  "name": "roboost_motor_control",
+  "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/roboost/roboost_motor_control.git"
+  },
+  "authors": [
+    {
+      "name": "Jakob Friedl",
+      "email": "friedl.jak@gmail.com",
+      "url": "https://jakobfriedl.tech",
+      "maintainer": true
+    }
+  ],
+  "build": {
+    "flags": ["-I common/include"],
+    "srcFilter": ["+<common/src/roboost/motor_control/**/*.cpp>"]
+  },
+  "frameworks": "*",
+  "platforms": "*",
+
+  "dependencies": [
+    {
+      "name": "Roboost Utils",
+      "version": "*",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/roboost/roboost_utils.git",
+        "branch": "main"
+      }
+    },
+    {
+      "name": "Roboost Kinematics",
+      "version": "*",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/roboost/roboost_kinematics.git",
+        "branch": "main"
+      }
+    },
+    {
+      "hideakitai/ArduinoEigen": "*"
+    }
+  ]
+}
