@@ -23,7 +23,7 @@ MotorControllerManager::MotorControllerManager(std::initializer_list<MotorContro
 
 MotorControllerManager::~MotorControllerManager()
 {
-    for (std::pair<MotorController*, float>& pair : motor_controllers_)
+    for (std::pair<MotorController*, double>& pair : motor_controllers_)
     {
         delete pair.first;
     }
@@ -33,7 +33,7 @@ void MotorControllerManager::set_motor_speed(const uint8_t motor_index, float de
 {
     if (motor_index < 0 || motor_index >= motor_controllers_.size())
     {
-        Serial.println("Invalid motor index");
+        // Serial.println("Invalid motor index"); // TODO: Implement logging
     }
     else
     {
@@ -43,17 +43,17 @@ void MotorControllerManager::set_motor_speed(const uint8_t motor_index, float de
 
 void MotorControllerManager::set_all_motor_speeds(const float desired_speed)
 {
-    for (std::pair<MotorController*, float>& pair : motor_controllers_)
+    for (std::pair<MotorController*, double>& pair : motor_controllers_)
     {
         pair.second = desired_speed;
     }
 }
 
-float MotorControllerManager::get_motor_speed(const uint8_t motor_index) const
+double MotorControllerManager::get_motor_speed(const uint8_t motor_index) const
 {
     if (motor_index < 0 || motor_index >= motor_controllers_.size())
     {
-        Serial.println("Invalid motor index");
+        // Serial.println("Invalid motor index"); // TODO: Implement logging
         return 0.0f;
     }
     else
@@ -66,10 +66,9 @@ uint8_t MotorControllerManager::get_motor_count() const { return motor_controlle
 
 void MotorControllerManager::update()
 {
-    int i = 0;
-    for (std::pair<MotorController*, float>& pair : motor_controllers_)
+    for (std::pair<MotorController*, double>& pair : motor_controllers_)
     {
-        // Serial.print(">motor ");
+        // Serial.print(">motor "); // TODO: Implement logging
         // Serial.print(i);
         // Serial.print(" setpoint:");
         // Serial.println(pair.second);
@@ -79,6 +78,5 @@ void MotorControllerManager::update()
         // Serial.println(pair.first->get_rotation_speed());
 
         pair.first->set_rotation_speed(pair.second);
-        i++;
     }
 }

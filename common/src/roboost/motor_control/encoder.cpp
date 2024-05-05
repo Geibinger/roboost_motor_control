@@ -3,9 +3,9 @@
 using namespace roboost::motor_control;
 
 #ifdef ESP32 // TODO: Add Teensyduino support
-double HalfQuadEncoder::get_angle() { return position_; }
+double HalfQuadEncoder::get_angle() const { return position_; }
 
-double HalfQuadEncoder::get_velocity() { return velocity_; }
+double HalfQuadEncoder::get_velocity() const { return velocity_; }
 
 void HalfQuadEncoder::update()
 {

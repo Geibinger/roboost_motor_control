@@ -50,11 +50,11 @@ namespace roboost
              * @note This is not the actual rotation speed of the motor, but the
              * rotation speed that was set using set_rotation_speed.
              */
-            float get_rotation_speed();
+            double get_rotation_speed() const;
 
         private:
             const float max_rotation_speed_;
-            float rotation_speed_setpoint_;
+            double rotation_speed_setpoint_;
         };
 
     } // namespace motor_control

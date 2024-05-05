@@ -1,12 +1,22 @@
+/**
+ * @file robot_controller.hpp
+ * @author Jakob Friedl (friedl.jak@gmail.com)
+ * @brief This file contains the RobotVelocityController class, which manages the
+ * control of a robot's motors and implements odometry calculations based on its
+ * kinematics model.
+ * @version 0.1
+ * @date 2023-07-06
+ *
+ * @copyright Copyright (c) 2023
+ *
+ */
+
 #ifndef VELOCITYCONTROLLER_H
 #define VELOCITYCONTROLLER_H
 
 #ifdef JOINTSTATECONTROLLER_H
 #error "joint_state_controller.hpp and robot_controller.hpp cannot be used at the same time!"
 #endif
-
-#include <ArduinoEigen.h>
-#include <nav_msgs/msg/odometry.h>
 
 #include <roboost/kinematics/kinematics.hpp>
 #include <roboost/motor_control/motor_control_manager.hpp>
@@ -42,17 +52,17 @@ namespace roboost
             /**
              * @brief Get the current velocity estimation estimation.
              *
-             * @return Eigen::Vector3d The current robot velocity estimation.
+             * @return roboost::math::Vector The current robot velocity estimation.
              */
-            Eigen::Vector3d get_robot_velocity();
+            roboost::math::Vector get_robot_vel() const;
 
             /**
              * @brief Get the current set wheel velocities.
              *
-             * @return Eigen::VectorXd The current set wheel velocities based on latest
+             * @return roboost::math::Vector The current set wheel velocities based on latest
              * command.
              */
-            Eigen::VectorXd get_set_wheel_velocities();
+            roboost::math::Vector get_wheel_vel_setpoints() const;
 
             /**
              * @brief Set the latest command for the robot's motion control.
@@ -61,14 +71,14 @@ namespace roboost
              * robot's motion control, currently only representing linear velocities
              * (vx, vy, vz).
              */
-            void set_latest_command(const Eigen::Vector3d& latest_command);
+            void set_latest_command(const roboost::math::Vector& latest_command);
 
         private:
             roboost::motor_control::MotorControllerManager& motor_manager_;
             roboost::kinematics::Kinematics* kinematics_model_;
 
-            Eigen::Vector3d latest_command_;
-            Eigen::Vector3d robot_velocity_;
+            roboost::math::Vector latest_command_;
+            roboost::math::Vector robot_velocity_;
         };
     } // namespace robot_controller
 } // namespace roboost

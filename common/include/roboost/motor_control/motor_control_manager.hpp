@@ -12,8 +12,9 @@
 #ifndef MOTOR_CONTROLLER_MANAGER_H
 #define MOTOR_CONTROLLER_MANAGER_H
 
-#include <ArduinoEigen.h>
 #include <roboost/motor_control/motor_controller.hpp>
+#include <roboost/utils/logging.hpp>
+#include <stdint.h>
 #include <vector>
 
 namespace roboost
@@ -56,7 +57,7 @@ namespace roboost
              * @param motor_index The index of the motor.
              * @return float The desired speed value.
              */
-            float get_motor_speed(const uint8_t motor_index) const;
+            double get_motor_speed(const uint8_t motor_index) const;
 
             /**
              * @brief Get the number of MotorControllers in the manager.
@@ -78,8 +79,7 @@ namespace roboost
             ~MotorControllerManager();
 
         private:
-            std::vector<std::pair<MotorController*, float>> motor_controllers_; // Vector to hold MotorController pointers and
-                                                                                // desired speeds.
+            std::vector<std::pair<MotorController*, double>> motor_controllers_; // The motor controllers and their desired speeds.
         };
 
     } // namespace motor_control

@@ -11,7 +11,9 @@
 #ifndef ENCODER_H
 #define ENCODER_H
 
+#ifdef ARDUINO
 #include <Arduino.h>
+#endif
 #include <roboost/utils/constants.h>
 #include <roboost/utils/timing.hpp>
 
@@ -32,14 +34,14 @@ namespace roboost
              *
              * @return float The velocity in rad/s.
              */
-            virtual double get_velocity() = 0;
+            virtual double get_velocity() const = 0;
 
             /**
              * @brief Get the angle of the encoder.
              *
              * @return float The angle in rad.
              */
-            virtual double get_angle() = 0;
+            virtual double get_angle() const = 0;
 
             /**
              * @brief Update the encoder values.
@@ -68,21 +70,21 @@ namespace roboost
              * @param resolution The resolution of the encoder.
              * @param reverse Whether the encoder is reversed.
              */
-            HalfQuadEncoder(const u_int8_t& pin_A, const u_int8_t& pin_B, const u_int16_t& resolution, const bool reverse = false, TimingService& timing_service = TimingService::get_instance());
+            HalfQuadEncoder(const u_int8_t& pin_A, const u_int8_t& pin_B, const u_int16_t& resolution, const bool reverse = false, const TimingService& timing_service = TimingService::get_instance());
 
             /**
              * @brief Get the velocity of the encoder.
              *
              * @return double The velocity in rad/s.
              */
-            double get_velocity() override;
+            double get_velocity() const override;
 
             /**
              * @brief Get the position of the encoder.
              *
              * @return double The position in rad (0 to 2*PI).
              */
-            double get_angle() override;
+            double get_angle() const override;
 
             /**
              * @brief Update the encoder values.
@@ -93,14 +95,14 @@ namespace roboost
             void update() override;
 
         private:
-            ESP32Encoder encoder_;
+            const ESP32Encoder encoder_;
             const u_int16_t resolution_;
-            double step_increment_;
+            const double step_increment_;
             int64_t prev_count_;
             const bool reverse_;
             double position_ = 0; // in radians
             double velocity_ = 0; // in radians per second
-            TimingService& timing_service_;
+            const TimingService& timing_service_;
         };
 #endif // ESP32
 
@@ -123,14 +125,14 @@ namespace roboost
              *
              * @return double The velocity in rad/s.
              */
-            double get_velocity() override { return 0; }
+            double get_velocity() const override { return 0; }
 
             /**
              * @brief Get the position of the encoder.
              *
              * @return double The position in rad (0 to 2*PI).
              */
-            double get_angle() override { return position_; }
+            double get_angle() const override { return position_; }
 
             /**
              * @brief Update the encoder values.
@@ -143,7 +145,7 @@ namespace roboost
         private:
             const u_int16_t resolution_;
             double position_ = 0; // in radians
-            double velocity_ = 0; // in radians per second
+            double velocity_ = 1; // in radians per second
         };
 
     } // namespace motor_control

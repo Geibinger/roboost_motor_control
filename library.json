@@ -38,9 +38,6 @@
         "url": "https://github.com/roboost/roboost_kinematics.git",
         "branch": "main"
       }
-    },
-    {
-      "hideakitai/ArduinoEigen": "*"
     }
   ]
 }

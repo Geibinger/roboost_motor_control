@@ -10,7 +10,6 @@
  *
  */
 
-#include <Arduino.h>
 #include <algorithm>
 #include <roboost/motor_control/simple_motor_controller.hpp>
 
@@ -27,4 +26,4 @@ void SimpleMotorController::set_rotation_speed(float desired_rotation_speed)
     motor_driver_.set_motor_control(rotation_speed_setpoint_);
 }
 
-float SimpleMotorController::get_rotation_speed() { return rotation_speed_setpoint_; }
+double SimpleMotorController::get_rotation_speed() const { return rotation_speed_setpoint_; }

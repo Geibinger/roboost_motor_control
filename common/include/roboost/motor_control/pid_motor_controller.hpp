@@ -39,7 +39,7 @@ namespace roboost
              * @param output_filter The filter to use for the output.
              */
             PIDMotorController(MotorDriver& motor_driver, Encoder& encoder, roboost::controllers::PIDController& pid_controller, roboost::filters::Filter& input_filter,
-                               roboost::filters::Filter& output_filter, double min_output);
+                               roboost::filters::Filter& output_filter, const double& min_output);
 
             /**
              * @brief Set the rotation speed of the motor.
@@ -53,14 +53,14 @@ namespace roboost
              *
              * @return float The rotation speed in rad/s.
              */
-            float get_rotation_speed();
+            double get_rotation_speed() const;
 
         private:
             Encoder& encoder_;
             roboost::controllers::PIDController& pid_;
             roboost::filters::Filter& input_filter_;
             roboost::filters::Filter& output_filter_;
-            double min_output_;
+            const double min_output_;
         };
 
     } // namespace motor_control

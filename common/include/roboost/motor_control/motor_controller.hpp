@@ -51,13 +51,13 @@ namespace roboost
             /**
              * @brief Get the current rotation speed of the motor.
              *
-             * @return float
+             * @return double The current rotation speed of the motor.
              *
              * @note This method returns the current rotation speed of the motor. The
              * actual behavior of the motor may depend on the implementation of the
              * MotorDriver.
              */
-            virtual float get_rotation_speed() = 0;
+            virtual double get_rotation_speed() const = 0;
 
             /**
              * @brief Set the print debug object

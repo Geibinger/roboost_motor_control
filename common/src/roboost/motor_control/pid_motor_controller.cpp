@@ -9,7 +9,6 @@
  *
  */
 
-#include <Arduino.h>
 #include <roboost/motor_control/pid_motor_controller.hpp>
 #include <roboost/utils/comparisons.hpp>
 
@@ -17,7 +16,7 @@ using namespace roboost::motor_control;
 using namespace roboost::controllers;
 using namespace roboost::filters;
 
-PIDMotorController::PIDMotorController(MotorDriver& motor_driver, Encoder& encoder, PIDController& pid, Filter& input_filter, Filter& output_filter, double min_output)
+PIDMotorController::PIDMotorController(MotorDriver& motor_driver, Encoder& encoder, PIDController& pid, Filter& input_filter, Filter& output_filter, const double& min_output)
     : MotorController(motor_driver), encoder_(encoder), pid_(pid), input_filter_(input_filter), output_filter_(output_filter), min_output_(min_output)
 {
 }
@@ -42,4 +41,4 @@ void PIDMotorController::set_rotation_speed(float desired_rotation_speed)
     motor_driver_.set_motor_control(output);
 }
 
-float PIDMotorController::get_rotation_speed() { return encoder_.get_velocity(); }
+double PIDMotorController::get_rotation_speed() const { return encoder_.get_velocity(); }
