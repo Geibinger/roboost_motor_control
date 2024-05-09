@@ -58,7 +58,7 @@ double MotorControllerManager::get_motor_speed(const uint8_t motor_index) const
     }
     else
     {
-        return motor_controllers_[motor_index].first->get_rotation_speed();
+        return motor_controllers_[motor_index].first->get_measurement();
     }
 }
 
@@ -75,8 +75,8 @@ void MotorControllerManager::update()
         // Serial.print(">motor ");
         // Serial.print(i);
         // Serial.print(" measured:");
-        // Serial.println(pair.first->get_rotation_speed());
+        // Serial.println(pair.first->get_measurement());
 
-        pair.first->set_rotation_speed(pair.second);
+        pair.first->set_target(pair.second);
     }
 }

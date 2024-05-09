@@ -42,13 +42,21 @@ namespace roboost
              * @param control_value The control value to be set. Should be between -1
              * and 1.
              */
-            void set_motor_control(float control_value);
+            void set_motor_control(double control_value);
+
+            /**
+             * @brief Get the motor control object
+             *
+             * @return double The control value.
+             */
+            double get_motor_control() const { return _control_value; }
 
         private:
             const uint8_t pin_in1_;
             const uint8_t pin_in2_;
             const uint8_t pin_ena_;
             const uint8_t pwm_channel_;
+            double _control_value;
         };
 
     } // namespace motor_control

@@ -9,12 +9,13 @@
  *
  */
 #include <Arduino.h>
+#include <algorithm>
 #include <roboost/motor_control/motor_drivers/l298n_motor_driver.hpp>
 
 using namespace roboost::motor_control;
 
 L298NMotorDriver::L298NMotorDriver(const uint8_t& pin_in1, const uint8_t& pin_in2, const uint8_t& pin_ena, const uint8_t& pwm_channel)
-    : pin_in1_(pin_in1), pin_in2_(pin_in2), pin_ena_(pin_ena), pwm_channel_(pwm_channel)
+    : pin_in1_(pin_in1), pin_in2_(pin_in2), pin_ena_(pin_ena), pwm_channel_(pwm_channel), _control_value(0.0)
 {
     // Initialize L298N...
     // setting pin modes
@@ -38,11 +39,12 @@ L298NMotorDriver::L298NMotorDriver(const uint8_t& pin_in1, const uint8_t& pin_in
 #endif // ESP32
 }
 
-void L298NMotorDriver::set_motor_control(float control_value)
+void L298NMotorDriver::set_motor_control(double control_value)
 {
     // control_value should be between -1 and 1
-    control_value = (control_value < -1.0) ? -1.0 : control_value;
-    control_value = (control_value > 1.0) ? 1.0 : control_value;
+    // _control_value = (control_value < -1.0) ? -1.0 : control_value;
+    // _control_value = (control_value > 1.0) ? 1.0 : control_value;
+    _control_value = std::clamp(control_value, -1.0, 1.0);
 
     // Set direction for L298N...
     bool direction = control_value >= 0;
@@ -50,7 +52,7 @@ void L298NMotorDriver::set_motor_control(float control_value)
     digitalWrite(pin_in2_, direction ? LOW : HIGH);
 
     // Set PWM for L298N...
-    u_int8_t pwm = static_cast<int>(std::abs(control_value) * 255);
+    u_int8_t pwm = static_cast<int>(std::abs(_control_value) * 255);
 
 #ifdef ESP32
     ledcWrite(pwm_channel_, pwm);

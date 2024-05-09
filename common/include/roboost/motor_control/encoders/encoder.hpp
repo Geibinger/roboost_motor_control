@@ -13,8 +13,12 @@
 
 #ifdef ARDUINO
 #include <Arduino.h>
+#include <ESP32Encoder.h>
+#elif defined(ESP32)
 #endif
+
 #include <roboost/utils/constants.h>
+#include <roboost/utils/logging.hpp>
 #include <roboost/utils/timing.hpp>
 
 namespace roboost
@@ -53,7 +57,6 @@ namespace roboost
         };
 
 #ifdef ESP32
-#include <ESP32Encoder.h>
 
         /**
          * @brief Encoder class for quadrature encoders.
@@ -70,7 +73,18 @@ namespace roboost
              * @param resolution The resolution of the encoder.
              * @param reverse Whether the encoder is reversed.
              */
-            HalfQuadEncoder(const u_int8_t& pin_A, const u_int8_t& pin_B, const u_int16_t& resolution, const bool reverse = false, const TimingService& timing_service = TimingService::get_instance());
+            HalfQuadEncoder(const u_int8_t& pin_A, const u_int8_t& pin_B, const u_int16_t& resolution, const bool reverse = false)
+                : resolution_(resolution), step_increment_(2 * PI / resolution), reverse_(reverse), prev_count_(0), timing_service_(nullptr)
+            {
+                encoder_.attachSingleEdge(pin_A, pin_B);
+            }
+
+            /**
+             * @brief Set the timing service for the encoder.
+             *
+             * @param timing_service The timing service to use.
+             */
+            void setTimingService(timing::TimingService& timing_service) { timing_service_ = &timing_service; }
 
             /**
              * @brief Get the velocity of the encoder.
@@ -87,6 +101,13 @@ namespace roboost
             double get_angle() const override;
 
             /**
+             * @brief Set the logger for the encoder.
+             *
+             * @param logger The logger to use.
+             */
+            void setLogger(roboost::logging::Logger& logger) { this->logger_ = &logger; }
+
+            /**
              * @brief Update the encoder values.
              *
              * @note This function should be called regularly to update the encoder
@@ -95,14 +116,15 @@ namespace roboost
             void update() override;
 
         private:
-            const ESP32Encoder encoder_;
-            const u_int16_t resolution_;
-            const double step_increment_;
+            ESP32Encoder encoder_;
+            const u_int16_t resolution_;  // number of steps per revolution
+            const double step_increment_; // in radians
             int64_t prev_count_;
             const bool reverse_;
             double position_ = 0; // in radians
             double velocity_ = 0; // in radians per second
-            const TimingService& timing_service_;
+            timing::TimingService* timing_service_;
+            roboost::logging::Logger* logger_;
         };
 #endif // ESP32
 

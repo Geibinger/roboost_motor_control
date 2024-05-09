@@ -35,7 +35,9 @@ namespace roboost
              *
              * @param control_value The control value for the motor.
              */
-            virtual void set_motor_control(float control_value) = 0;
+            virtual void set_motor_control(double control_value) = 0;
+
+            // TODO: Add minimum output value
         };
 
     } // namespace motor_control

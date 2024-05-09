@@ -12,7 +12,7 @@
 #ifndef MOTOR_CONTROLLER_MANAGER_H
 #define MOTOR_CONTROLLER_MANAGER_H
 
-#include <roboost/motor_control/motor_controller.hpp>
+#include <roboost/motor_control/motor_controllers/motor_controller.hpp>
 #include <roboost/utils/logging.hpp>
 #include <stdint.h>
 #include <vector>

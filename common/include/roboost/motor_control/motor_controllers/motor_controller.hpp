@@ -24,7 +24,7 @@ namespace roboost
          *
          * @note This class defines an interface for controlling motors using a
          * MotorDriver. Subclasses of MotorController are expected to implement the
-         * set_rotation_speed method to set the desired rotation speed of the motor.
+         * set_target method to set the desired rotation speed of the motor.
          */
         class MotorController
         {
@@ -40,13 +40,13 @@ namespace roboost
             /**
              * @brief Set the desired rotation speed of the motor.
              *
-             * @param desired_rotation_speed The desired rotation speed for the motor.
+             * @param target The desired rotation speed for the motor.
              *
              * @note This method allows setting the desired rotation speed for the motor
              * controlled by the MotorDriver. The actual behavior of the motor may
              * depend on the implementation of the MotorDriver.
              */
-            virtual void set_rotation_speed(float desired_rotation_speed) = 0;
+            virtual void set_target(double target) = 0;
 
             /**
              * @brief Get the current rotation speed of the motor.
@@ -57,20 +57,10 @@ namespace roboost
              * actual behavior of the motor may depend on the implementation of the
              * MotorDriver.
              */
-            virtual double get_rotation_speed() const = 0;
-
-            /**
-             * @brief Set the print debug object
-             *
-             * @param print_debug Whether to print debug information.
-             *
-             * @note The debug output is formatted for Teleplot.
-             */
-            void print_debug(bool print_debug) { print_debug_ = print_debug; }
+            virtual double get_measurement() const = 0;
 
         protected:
             MotorDriver& motor_driver_;
-            bool print_debug_ = false;
         };
 
     } // namespace motor_control

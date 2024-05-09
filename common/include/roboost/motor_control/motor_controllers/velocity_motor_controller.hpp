@@ -1,8 +1,9 @@
+
 /**
- * @file pid_motor_controller.hpp
+ * @file simple_motor_controller.hpp
  * @author Jakob Friedl (friedl.jak@gmail.com)
- * @brief Implementation of MotorController, which sets the control output
- * directy to the motor driver with encoder feedback and PID control.
+ * @brief Definition of MotorController, which sets the control output
+ * directy to the motor driver without feedback loop.
  * @version 0.1
  * @date 2023-07-06
  *
@@ -10,11 +11,11 @@
  *
  */
 
-#ifndef PID_MOTOR_CONTROLLER_H
-#define PID_MOTOR_CONTROLLER_H
+#ifndef VELOCITY_MOTOR_CONTROLLER_H
+#define VELOCITY_MOTOR_CONTROLLER_H
 
-#include <roboost/motor_control/encoder.hpp>
-#include <roboost/motor_control/motor_controller.hpp>
+#include <roboost/motor_control/encoders/encoder.hpp>
+#include <roboost/motor_control/motor_controllers/motor_controller.hpp>
 #include <roboost/utils/controllers.hpp>
 
 namespace roboost
@@ -26,11 +27,11 @@ namespace roboost
          * directy to the motor driver with encoder feedback and PID control.
          *
          */
-        class PIDMotorController : public MotorController
+        class VelocityController : public MotorController
         {
         public:
             /**
-             * @brief Construct a new PIDMotorController object
+             * @brief Construct a new VelocityController object
              *
              * @param motor_driver The motor driver to control.
              * @param encoder The encoder to read the rotation speed from.
@@ -38,32 +39,31 @@ namespace roboost
              * @param input_filter The filter to use for the input.
              * @param output_filter The filter to use for the output.
              */
-            PIDMotorController(MotorDriver& motor_driver, Encoder& encoder, roboost::controllers::PIDController& pid_controller, roboost::filters::Filter& input_filter,
-                               roboost::filters::Filter& output_filter, const double& min_output);
+            VelocityController(MotorDriver& motor_driver, Encoder& encoder, roboost::controllers::PIDController& pid_controller, roboost::filters::Filter& input_filter,
+                               roboost::filters::Filter& output_filter);
 
             /**
              * @brief Set the rotation speed of the motor.
              *
              * @param desired_rotation_speed The desired rotation speed in rad/s.
              */
-            void set_rotation_speed(float desired_rotation_speed);
+            void set_target(double desired_rotation_speed);
 
             /**
              * @brief Get the rotation speed of the motor.
              *
              * @return float The rotation speed in rad/s.
              */
-            double get_rotation_speed() const;
+            double get_measurement() const;
 
         private:
             Encoder& encoder_;
             roboost::controllers::PIDController& pid_;
             roboost::filters::Filter& input_filter_;
             roboost::filters::Filter& output_filter_;
-            const double min_output_;
         };
 
     } // namespace motor_control
 } // namespace roboost
 
-#endif // PID_MOTOR_CONTROLLER_H
+#endif // VELOCITY_MOTOR_CONTROLLER_H

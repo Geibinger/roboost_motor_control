@@ -11,13 +11,13 @@
  */
 
 #include <algorithm>
-#include <roboost/motor_control/simple_motor_controller.hpp>
+#include <roboost/motor_control/motor_controllers/simple_motor_controller.hpp>
 
 using namespace roboost::motor_control;
 
-SimpleMotorController::SimpleMotorController(MotorDriver& motor_driver, float max_rotation_speed) : MotorController(motor_driver), max_rotation_speed_(max_rotation_speed) {}
+SimpleMotorController::SimpleMotorController(MotorDriver& motor_driver, double max_rotation_speed) : MotorController(motor_driver), max_rotation_speed_(max_rotation_speed) {}
 
-void SimpleMotorController::set_rotation_speed(float desired_rotation_speed)
+void SimpleMotorController::set_target(double desired_rotation_speed)
 {
     desired_rotation_speed = std::clamp(desired_rotation_speed, -max_rotation_speed_, max_rotation_speed_);
 
@@ -26,4 +26,4 @@ void SimpleMotorController::set_rotation_speed(float desired_rotation_speed)
     motor_driver_.set_motor_control(rotation_speed_setpoint_);
 }
 
-double SimpleMotorController::get_rotation_speed() const { return rotation_speed_setpoint_; }
+double SimpleMotorController::get_measurement() const { return rotation_speed_setpoint_; }

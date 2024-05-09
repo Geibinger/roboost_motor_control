@@ -13,7 +13,7 @@
 #ifndef SIMPLE_MOTOR_CONTROLLER_H
 #define SIMPLE_MOTOR_CONTROLLER_H
 
-#include <roboost/motor_control/motor_controller.hpp>
+#include <roboost/motor_control/motor_controllers/motor_controller.hpp>
 
 namespace roboost
 {
@@ -33,14 +33,14 @@ namespace roboost
              * @param max_rotation_speed Max rotational speed motor driver can output in
              * rad/sec
              */
-            SimpleMotorController(MotorDriver& motor_driver, const float max_rotation_speed);
+            SimpleMotorController(MotorDriver& motor_driver, const double max_rotation_speed);
 
             /**
              * @brief Set the rotation speed of the motor
              *
              * @param desired_rotation_speed desired rotation speed in rad/sec
              */
-            void set_rotation_speed(const float desired_rotation_speed);
+            void set_target(const double desired_rotation_speed);
 
             /**
              * @brief Get the rotation speed of the motor
@@ -48,12 +48,12 @@ namespace roboost
              * @return float rotation speed in rad/sec
              *
              * @note This is not the actual rotation speed of the motor, but the
-             * rotation speed that was set using set_rotation_speed.
+             * rotation speed that was set using set_target.
              */
-            double get_rotation_speed() const;
+            double get_measurement() const;
 
         private:
-            const float max_rotation_speed_;
+            const double max_rotation_speed_;
             double rotation_speed_setpoint_;
         };
 
