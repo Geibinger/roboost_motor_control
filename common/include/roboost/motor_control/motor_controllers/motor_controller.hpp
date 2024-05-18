@@ -1,16 +1,12 @@
 /**
  * @file motor_controller.hpp
- * @author Jakob Friedl (friedl.jak@gmail.com)
- * @brief Defines the MotorController class, which provides an interface for
- * controlling motors.
- * @version 0.1
- * @date 2023-07-06
- *
- * @copyright Copyright (c) 2023
- *
+ * @brief Defines the MotorController class, which provides an interface for controlling motors.
+ * @version 0.2
+ * @date 2024-05-17
  */
-#ifndef MOTOR_CONTROLLER_H
-#define MOTOR_CONTROLLER_H
+
+#ifndef MOTOR_CONTROLLER_HPP
+#define MOTOR_CONTROLLER_HPP
 
 #include <roboost/motor_control/motor_drivers/motor_driver.hpp>
 
@@ -18,52 +14,42 @@ namespace roboost
 {
     namespace motor_control
     {
-
         /**
          * @brief Abstract base class for controlling motors.
          *
-         * @note This class defines an interface for controlling motors using a
-         * MotorDriver. Subclasses of MotorController are expected to implement the
-         * set_target method to set the desired rotation speed of the motor.
+         * @tparam Derived The derived class implementing the MotorController interface.
+         * @tparam MotorDriverType The type of the motor driver.
          */
-        class MotorController
+        template <typename Derived, typename MotorDriverType>
+        class MotorControllerBase
         {
         public:
             /**
              * @brief Constructor for creating a Motor Controller object.
              *
-             * @param motor_driver A reference to the MotorDriver object that controls
-             * the motor.
+             * @param motor_driver A reference to the MotorDriver object that controls the motor.
              */
-            MotorController(MotorDriver& motor_driver) : motor_driver_(motor_driver) {}
+            MotorControllerBase(MotorDriverType& motor_driver) : motor_driver_(motor_driver) {}
 
             /**
              * @brief Set the desired rotation speed of the motor.
              *
              * @param target The desired rotation speed for the motor.
-             *
-             * @note This method allows setting the desired rotation speed for the motor
-             * controlled by the MotorDriver. The actual behavior of the motor may
-             * depend on the implementation of the MotorDriver.
              */
-            virtual void set_target(double target) = 0;
+            void set_target(double target) { static_cast<Derived*>(this)->set_target(target); }
 
             /**
              * @brief Get the current rotation speed of the motor.
              *
              * @return double The current rotation speed of the motor.
-             *
-             * @note This method returns the current rotation speed of the motor. The
-             * actual behavior of the motor may depend on the implementation of the
-             * MotorDriver.
              */
-            virtual double get_measurement() const = 0;
+            double get_measurement() const { return static_cast<const Derived*>(this)->get_measurement(); }
 
         protected:
-            MotorDriver& motor_driver_;
+            MotorDriverType& motor_driver_;
         };
 
     } // namespace motor_control
 } // namespace roboost
 
-#endif // MOTOR_CONTROLLER_H
+#endif // MOTOR_CONTROLLER_HPP

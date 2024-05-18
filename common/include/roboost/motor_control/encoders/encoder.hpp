@@ -1,176 +1,208 @@
 /**
  * @file encoder.hpp
- * @author Jakob Friedl (friedl.jak@gmail.com)
  * @brief This file contains the abstract base class for reading encoder values.
- * @version 0.1
- * @date 2023-07-06
- *
- * @copyright Copyright (c) 2023
- *
+ * @version 0.4
+ * @date 2024-05-17
  */
+
 #ifndef ENCODER_H
 #define ENCODER_H
 
 #ifdef ARDUINO
 #include <Arduino.h>
-#include <ESP32Encoder.h>
-#elif defined(ESP32)
 #endif
 
-#include <roboost/utils/constants.h>
-#include <roboost/utils/logging.hpp>
-#include <roboost/utils/timing.hpp>
+#ifdef ESP32
+#include <ESP32Encoder.h>
+#endif
 
-namespace roboost
+// TODO: Add Teensyduino support
+
+#include <roboost/utils/callback_scheduler.hpp>
+#include <roboost/utils/logging.hpp>
+#include <roboost/utils/time_macros.hpp>
+
+namespace roboost::motor_control
 {
-    namespace motor_control
+
+    /**
+     * @brief Encoder base class using CRTP.
+     *
+     * @tparam Derived The derived class implementing the Encoder interface.
+     */
+    template <typename Derived>
+    class Encoder
     {
+    public:
+        /**
+         * @brief Get the velocity of the encoder.
+         *
+         * @return int64_t The velocity in ticks/s.
+         */
+        int64_t get_velocity() const { return static_cast<const Derived*>(this)->get_velocity(); }
 
         /**
-         * @brief Encoder base class.
+         * @brief Get the position of the encoder.
          *
+         * @return int64_t The position in ticks.
          */
-        class Encoder
-        {
-        public:
-            /**
-             * @brief Get the velocity of the encoder.
-             *
-             * @return float The velocity in rad/s.
-             */
-            virtual double get_velocity() const = 0;
+        int64_t get_position() const { return static_cast<const Derived*>(this)->get_position(); }
 
-            /**
-             * @brief Get the angle of the encoder.
-             *
-             * @return float The angle in rad.
-             */
-            virtual double get_angle() const = 0;
+        /**
+         * @brief Update the encoder values.
+         *
+         * @note This function should be called regularly to update the encoder values.
+         */
+        void update() { static_cast<Derived*>(this)->update(); }
 
-            /**
-             * @brief Update the encoder values.
-             *
-             * @note This function should be called regularly to update the encoder
-             * values.
-             */
-            virtual void update() = 0;
-        };
+        /**
+         * @brief Get the step increment in radians per tick.
+         *
+         * @return double The step increment.
+         */
+        inline double get_step_increment() const { return static_cast<const Derived*>(this)->get_step_increment(); }
+
+        /**
+         * @brief Convert ticks to radians.
+         *
+         * @param ticks The number of ticks.
+         * @return double The equivalent radians.
+         */
+        inline double ticks_to_radians(const int64_t& ticks) const { return ticks * get_step_increment(); }
+
+        /**
+         * @brief Convert ticks/s to rad/s.
+         *
+         * @param ticks_per_second The velocity in ticks per second.
+         * @return double The equivalent radians per second.
+         */
+        inline double ticks_to_radians_per_second(const int64_t& ticks_per_second) const { return ticks_per_second * get_step_increment(); }
+    };
 
 #ifdef ESP32
 
+    /**
+     * @brief Encoder class for quadrature encoders.
+     *
+     */
+    class HalfQuadEncoder : public Encoder<HalfQuadEncoder>
+    {
+    public:
         /**
-         * @brief Encoder class for quadrature encoders.
+         * @brief Construct a new HalfQuadEncoder object
+         *
+         * @param pin_A The pin for the A channel.
+         * @param pin_B The pin for the B channel.
+         * @param resolution The resolution of the encoder.
+         * @param reverse Whether the encoder is reversed.
+         */
+        HalfQuadEncoder(const uint8_t& pin_A, const uint8_t& pin_B, const uint16_t& resolution, const bool reverse = false)
+            : resolution_(resolution), step_increment_(2.0 * M_PI / resolution), reverse_(reverse), prev_count_(0), timing_service_(roboost::timing::CallbackScheduler::get_instance())
+        {
+            encoder_.attachSingleEdge(pin_A, pin_B);
+        }
+
+        /**
+         * @brief Implementation of get_velocity() for the derived class.
+         *
+         * @return int64_t The velocity in ticks/s
+         */
+        int64_t get_velocity() const { return velocity_; }
+
+        /**
+         * @brief Implementation of get_position() for the derived class.
+         *
+         * @return int64_t The position in ticks
+         */
+        int64_t get_position() const { return position_; }
+
+        /**
+         * @brief Get the step increment in radians per tick.
+         *
+         * @return double The step increment.
+         */
+        double get_step_increment() const { return step_increment_; }
+
+        /**
+         * @brief Implementation of update() for the derived class.
          *
          */
-        class HalfQuadEncoder : public Encoder
+        void update()
         {
-        public:
-            /**
-             * @brief Construct a new HalfQuadEncoder object
-             *
-             * @param pin_A The pin for the A channel.
-             * @param pin_B The pin for the B channel.
-             * @param resolution The resolution of the encoder.
-             * @param reverse Whether the encoder is reversed.
-             */
-            HalfQuadEncoder(const u_int8_t& pin_A, const u_int8_t& pin_B, const u_int16_t& resolution, const bool reverse = false)
-                : resolution_(resolution), step_increment_(2 * PI / resolution), reverse_(reverse), prev_count_(0), timing_service_(nullptr)
-            {
-                encoder_.attachSingleEdge(pin_A, pin_B);
-            }
+            uint32_t dt = timing_service_.get_delta_time();
+            if (dt == 0)
+                return; // Prevent division by zero
 
-            /**
-             * @brief Set the timing service for the encoder.
-             *
-             * @param timing_service The timing service to use.
-             */
-            void setTimingService(timing::TimingService& timing_service) { timing_service_ = &timing_service; }
+            int64_t count = encoder_.getCount();
+            int64_t position_change = (count - prev_count_) * (reverse_ ? -1 : 1);
 
-            /**
-             * @brief Get the velocity of the encoder.
-             *
-             * @return double The velocity in rad/s.
-             */
-            double get_velocity() const override;
+            position_ = count;
+            velocity_ = (position_change * 1000000) / dt; // ticks per second
 
-            /**
-             * @brief Get the position of the encoder.
-             *
-             * @return double The position in rad (0 to 2*PI).
-             */
-            double get_angle() const override;
+            prev_count_ = count;
+        }
 
-            /**
-             * @brief Set the logger for the encoder.
-             *
-             * @param logger The logger to use.
-             */
-            void setLogger(roboost::logging::Logger& logger) { this->logger_ = &logger; }
+    private:
+        const uint16_t resolution_;   // number of steps per revolution
+        const double step_increment_; // in radians per step
+        const bool reverse_;
+        volatile int64_t prev_count_;
+        volatile int64_t position_ = 0;             // in ticks
+        volatile int64_t velocity_ = 0;             // in ticks per second
+        ESP32Encoder encoder_;                      // TODO: use pointer instead of object
+        timing::CallbackScheduler& timing_service_; // TODO: use pointer instead of object
+    };
 
-            /**
-             * @brief Update the encoder values.
-             *
-             * @note This function should be called regularly to update the encoder
-             * values.
-             */
-            void update() override;
-
-        private:
-            ESP32Encoder encoder_;
-            const u_int16_t resolution_;  // number of steps per revolution
-            const double step_increment_; // in radians
-            int64_t prev_count_;
-            const bool reverse_;
-            double position_ = 0; // in radians
-            double velocity_ = 0; // in radians per second
-            timing::TimingService* timing_service_;
-            roboost::logging::Logger* logger_;
-        };
 #endif // ESP32
 
+    /**
+     * @brief Encoder placeholder for testing.
+     *
+     */
+    class DummyEncoder : public Encoder<DummyEncoder>
+    {
+    public:
         /**
-         * @brief Encode placeholder for testing.
+         * @brief Construct a new DummyEncoder object
+         *
+         * @param resolution The resolution of the encoder.
+         */
+        DummyEncoder(const uint16_t& resolution) : resolution_(resolution), step_increment_(2.0 * M_PI / resolution) {}
+
+        /**
+         * @brief Implementation of get_velocity() for the derived class.
+         *
+         * @return int64_t The velocity in ticks/s.
+         */
+        int64_t get_velocity() const { return velocity_; }
+
+        /**
+         * @brief Implementation of get_position() for the derived class.
+         *
+         * @return int64_t The position in ticks.
+         */
+        int64_t get_position() const { return position_; }
+
+        /**
+         * @brief Get the step increment in radians per tick.
+         *
+         * @return double The step increment.
+         */
+        double get_step_increment() const { return step_increment_; }
+
+        /**
+         * @brief Implementation of update() for the derived class.
          *
          */
-        class DummyEncoder : public Encoder
-        {
-        public:
-            /**
-             * @brief Construct a new DummyEncoder object
-             *
-             * @param resolution The resolution of the encoder.
-             */
-            DummyEncoder(const u_int16_t& resolution) : resolution_(resolution) {}
+        void update() { position_ += velocity_ * 10; } // Simulated update
 
-            /**
-             * @brief Get the velocity of the encoder.
-             *
-             * @return double The velocity in rad/s.
-             */
-            double get_velocity() const override { return 0; }
+    private:
+        const uint16_t resolution_;
+        const double step_increment_;
+        int64_t position_ = 0; // in ticks
+        int64_t velocity_ = 1; // in ticks per second
+    };
 
-            /**
-             * @brief Get the position of the encoder.
-             *
-             * @return double The position in rad (0 to 2*PI).
-             */
-            double get_angle() const override { return position_; }
-
-            /**
-             * @brief Update the encoder values.
-             *
-             * @note This function should be called regularly to update the encoder
-             * values.
-             */
-            void update() override { position_ += velocity_ * 0.01; }
-
-        private:
-            const u_int16_t resolution_;
-            double position_ = 0; // in radians
-            double velocity_ = 1; // in radians per second
-        };
-
-    } // namespace motor_control
-} // namespace roboost
+} // namespace roboost::motor_control
 
 #endif // ENCODER_H

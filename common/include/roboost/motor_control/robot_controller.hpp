@@ -1,18 +1,14 @@
 /**
  * @file robot_controller.hpp
- * @author Jakob Friedl (friedl.jak@gmail.com)
  * @brief This file contains the RobotVelocityController class, which manages the
  * control of a robot's motors and implements odometry calculations based on its
  * kinematics model.
- * @version 0.1
- * @date 2023-07-06
- *
- * @copyright Copyright (c) 2023
- *
+ * @version 0.2
+ * @date 2024-05-17
  */
 
-#ifndef VELOCITYCONTROLLER_H
-#define VELOCITYCONTROLLER_H
+#ifndef ROBOT_CONTROLLER_HPP
+#define ROBOT_CONTROLLER_HPP
 
 #ifdef JOINTSTATECONTROLLER_H
 #error "joint_state_controller.hpp and robot_controller.hpp cannot be used at the same time!"
@@ -20,49 +16,82 @@
 
 #include <roboost/kinematics/kinematics.hpp>
 #include <roboost/motor_control/motor_control_manager.hpp>
+#include <roboost/utils/matrices.hpp>
 
 namespace roboost
 {
     namespace robot_controller
     {
-        // TODO: Implement JointStateController class
         /**
-         * @brief The VelocityController class manages the control of a robot's motors
+         * @brief The RobotVelocityController class manages the control of a robot's motors
          * and implements odometry calculations based on its kinematics model.
          */
+        template <typename MotorControllerType, typename KinematicsType>
         class RobotVelocityController
         {
         public:
             /**
              * @brief Construct a new Robot Controller object.
              *
-             * @param motor_manager The motor control manager responsible for motor
-             *                      control.
-             * @param kinematics_model The kinematics model used for odometry
-             * calculations.
+             * @param motor_manager The motor control manager responsible for motor control.
+             * @param kinematics_model The kinematics model used for odometry calculations.
              */
-            RobotVelocityController(roboost::motor_control::MotorControllerManager& motor_manager, roboost::kinematics::Kinematics* kinematics_model);
+            RobotVelocityController(roboost::motor_control::MotorControllerManager<MotorControllerType>& motor_manager, KinematicsType& kinematics_model)
+                : motor_manager_(motor_manager), kinematics_model_(kinematics_model), robot_velocity_(roboost::math::ZeroVector<double>(3)), latest_command_(roboost::math::ZeroVector<double>(3))
+            {
+            }
 
             /**
              * @brief Update the robot's control loop. This method should be called
              *        periodically to control the robot's motors and update odometry.
              */
-            void update();
+            void update()
+            {
+                roboost::math::Vector<double> desired_wheel_speeds = kinematics_model_.calculate_wheel_velocity(latest_command_);
+
+                int motor_count = motor_manager_.get_motor_count(); // TODO: Make this compile time constant
+                if (desired_wheel_speeds.size() != motor_count)
+                {
+                    // Serial.println("Not enough motor controllers"); // TODO: Implement logging
+                    return;
+                }
+
+                for (int i = 0; i < motor_count; ++i)
+                {
+                    motor_manager_.set_motor_speed(i, desired_wheel_speeds.at(i));
+                }
+                motor_manager_.update();
+
+                roboost::math::Vector<double> actual_wheel_speeds(motor_count);
+                for (int i = 0; i < motor_count; ++i)
+                {
+                    actual_wheel_speeds.at(i) = motor_manager_.get_motor_speed(i);
+                }
+
+                robot_velocity_ = kinematics_model_.calculate_robot_velocity(actual_wheel_speeds);
+            }
 
             /**
-             * @brief Get the current velocity estimation estimation.
+             * @brief Get the current velocity estimation.
              *
              * @return roboost::math::Vector The current robot velocity estimation.
              */
-            roboost::math::Vector get_robot_vel() const;
+            roboost::math::Vector<double> get_robot_vel() const
+            {
+                // Return the latest odometry data
+                return robot_velocity_;
+            }
 
             /**
              * @brief Get the current set wheel velocities.
              *
-             * @return roboost::math::Vector The current set wheel velocities based on latest
-             * command.
+             * @return roboost::math::Vector The current set wheel velocities based on latest command.
              */
-            roboost::math::Vector get_wheel_vel_setpoints() const;
+            roboost::math::Vector<double> get_wheel_vel_setpoints() const
+            {
+                // Return the latest set wheel velocities
+                return kinematics_model_.calculate_wheel_velocity(latest_command_);
+            }
 
             /**
              * @brief Set the latest command for the robot's motion control.
@@ -71,16 +100,16 @@ namespace roboost
              * robot's motion control, currently only representing linear velocities
              * (vx, vy, vz).
              */
-            void set_latest_command(const roboost::math::Vector& latest_command);
+            void set_latest_command(const roboost::math::Vector<double>& latest_command) { latest_command_ = latest_command; }
 
         private:
-            roboost::motor_control::MotorControllerManager& motor_manager_;
-            roboost::kinematics::Kinematics* kinematics_model_;
+            roboost::motor_control::MotorControllerManager<MotorControllerType>& motor_manager_;
+            KinematicsType& kinematics_model_;
 
-            roboost::math::Vector latest_command_;
-            roboost::math::Vector robot_velocity_;
+            roboost::math::Vector<double> latest_command_;
+            roboost::math::Vector<double> robot_velocity_;
         };
     } // namespace robot_controller
 } // namespace roboost
 
-#endif // VELOCITYCONTROLLER_H
+#endif // ROBOT_CONTROLLER_HPP

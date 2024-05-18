@@ -38,6 +38,9 @@
         "url": "https://github.com/roboost/roboost_kinematics.git",
         "branch": "main"
       }
+    },
+    {
+      "madhephaestus/ESP32Encoder": "^0.10.2"
     }
   ]
 }
