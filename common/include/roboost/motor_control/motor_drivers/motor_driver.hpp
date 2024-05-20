@@ -8,13 +8,20 @@
 #ifndef MOTOR_DRIVERS_H
 #define MOTOR_DRIVERS_H
 
+#ifdef ARDUINO
 #include <Arduino.h>
+#endif // ARDUINO
 #include <algorithm>
 #include <cstdint>
 #include <type_traits>
-
 namespace roboost::motor_control
 {
+
+    constexpr uint8_t PWM_RESOLUTION = UINT8_C(10);
+    constexpr uint32_t PWM_FREQUENCY = UINT32_C(1 << 11);
+
+#ifdef ARDUINO
+
     /**
      * @class MotorDriverBase
      * @brief Base class for CRTP motor drivers.
@@ -43,9 +50,6 @@ namespace roboost::motor_control
     protected:
         volatile int32_t control_value_;
     };
-
-    constexpr uint8_t PWM_RESOLUTION = UINT8_C(10);
-    constexpr uint32_t PWM_FREQUENCY = UINT32_C(1 << 11);
 
     /**
      * @class L298NMotorDriver
@@ -124,6 +128,8 @@ namespace roboost::motor_control
         const uint8_t pin_ena_;
         const uint8_t pwm_channel_;
     };
+
+#endif // ARDUINO
 
 } // namespace roboost::motor_control
 

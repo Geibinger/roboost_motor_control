@@ -10,6 +10,7 @@
 
 #include <roboost/motor_control/encoders/encoder.hpp>
 #include <roboost/motor_control/motor_controllers/motor_controller.hpp>
+#include <roboost/utils/callback_scheduler.hpp>
 #include <roboost/utils/controllers.hpp>
 #include <roboost/utils/filters.hpp>
 
@@ -17,9 +18,6 @@ namespace roboost
 {
     namespace motor_control
     {
-        // TOOD: Move this to a more appropriate location
-        inline int32_t fast_map(double x, double in_min, double in_max, int32_t out_min, int32_t out_max) { return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min; }
-
         /**
          * @brief Implementation of MotorController, which sets the control output directly to the motor driver with encoder feedback and PID control.
          *
@@ -48,53 +46,48 @@ namespace roboost
              * @param minimum_output The minimum output.
              */
             VelocityController(MotorDriverType& motor_driver, EncoderType& encoder, ControllerType& pid_controller, InputFilterType& input_filter, OutputFilterType& output_filter,
-                               RateLimitingFilterType& rate_limiting_filter, double deadband_threshold, double minimum_output)
+                               RateLimitingFilterType& rate_limiting_filter, int32_t deadband_threshold, int32_t minimum_output)
                 : MotorControllerBase<VelocityController<MotorDriverType, EncoderType, ControllerType, InputFilterType, OutputFilterType, RateLimitingFilterType>, MotorDriverType>(motor_driver),
                   encoder_(encoder), pid_(pid_controller), input_filter_(input_filter), output_filter_(output_filter), rate_limiting_filter_(rate_limiting_filter),
-                  deadband_threshold_(deadband_threshold), minimum_output_(minimum_output), current_setpoint_(0.0)
+                  deadband_threshold_(deadband_threshold), minimum_output_(minimum_output), current_setpoint_(0)
             {
             }
 
             /**
              * @brief Set the rotation speed of the motor.
              *
-             * @param desired_rotation_speed The desired rotation speed in rad/s.
+             * @param desired_rotation_speed The desired rotation speed in ticks/s.
              */
-            void set_target(double desired_rotation_speed)
+            void set_target(float desired_rotation_speed)
             {
                 encoder_.update();
-                double input = encoder_.ticks_to_radians_per_second(encoder_.get_velocity());
+                float input = encoder_.get_velocity_radians_per_second(); // in ticks/s
                 input = input_filter_.update(input);
 
                 current_setpoint_ = rate_limiting_filter_.update(desired_rotation_speed, input);
 
-                double output = pid_.update(current_setpoint_, input);
+                float output = pid_.update(current_setpoint_, input);
                 output = output_filter_.update(output);
 
                 // Adjust output for deadband and minimum output
-                if (fabs(output) < deadband_threshold_)
+                if (abs(output) < deadband_threshold_)
                 {
-                    output = 0.0;
+                    output = 0;
                 }
-                else if (fabs(output) < minimum_output_)
+                else if (abs(output) < minimum_output_)
                 {
-                    output = minimum_output_ * (output / fabs(output));
+                    output = minimum_output_ * (output / abs(output));
                 }
 
-                // TODO: Improve this mapping
-                int32_t motor_control_value = fast_map(output, -1.0, 1.0, -PWM_RESOLUTION, PWM_RESOLUTION);
+                // map float output (-1, 1) to int32_t motor_control_value (-PWM_RESOLUTION, PWM_RESOLUTION)
+                int32_t motor_control_value = static_cast<int32_t>(output * PWM_RESOLUTION);
 
                 this->motor_driver_.set_motor_control(motor_control_value);
             }
 
-            /**
-             * @brief Get the rotation speed of the motor.
-             *
-             * @return double The rotation speed in rad/s.
-             */
-            double get_measurement() const { return encoder_.ticks_to_radians_per_second(encoder_.get_velocity()); }
+            int64_t get_measurement() const { return encoder_.get_velocity_radians_per_second(); }
 
-            double get_setpoint() const { return current_setpoint_; }
+            int64_t get_setpoint() const { return current_setpoint_; }
 
         private:
             EncoderType& encoder_;
@@ -102,9 +95,9 @@ namespace roboost
             InputFilterType& input_filter_;
             OutputFilterType& output_filter_;
             RateLimitingFilterType& rate_limiting_filter_;
-            double deadband_threshold_;
-            double minimum_output_;
-            double current_setpoint_;
+            int32_t deadband_threshold_;
+            int32_t minimum_output_;
+            int64_t current_setpoint_;
         };
 
     } // namespace motor_control

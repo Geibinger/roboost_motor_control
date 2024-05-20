@@ -44,7 +44,7 @@ namespace roboost
              * @param motor_index The index of the motor.
              * @param desired_speed The desired speed value.
              */
-            void set_motor_speed(const uint8_t motor_index, double desired_speed)
+            void set_motor_speed(const uint8_t motor_index, int32_t desired_speed)
             {
                 if (motor_index < 0 || motor_index >= motor_controllers_.size())
                 {
@@ -61,7 +61,7 @@ namespace roboost
              *
              * @param desired_speed The desired speed value.
              */
-            void set_all_motor_speeds(double desired_speed)
+            void set_all_motor_speeds(int32_t desired_speed)
             {
                 for (auto& pair : motor_controllers_)
                 {
@@ -73,9 +73,9 @@ namespace roboost
              * @brief Get the desired speed of a specific motor.
              *
              * @param motor_index The index of the motor.
-             * @return double The desired speed value.
+             * @return int32_t The desired speed value.
              */
-            double get_motor_speed(const uint8_t motor_index) const
+            int32_t get_motor_speed(const uint8_t motor_index) const
             {
                 if (motor_index < 0 || motor_index >= motor_controllers_.size())
                 {
@@ -129,7 +129,7 @@ namespace roboost
             }
 
         private:
-            std::vector<std::pair<MotorControllerType*, double>> motor_controllers_; // The motor controllers and their desired speeds.
+            std::vector<std::pair<MotorControllerType*, int32_t>> motor_controllers_; // The motor controllers and their desired speeds.
         };
 
     } // namespace motor_control

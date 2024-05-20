@@ -49,6 +49,20 @@ namespace roboost::motor_control
         int64_t get_position() const { return static_cast<const Derived*>(this)->get_position(); }
 
         /**
+         * @brief Get the velocity of the encoder in radians per second.
+         *
+         * @return float The velocity in radians per second.
+         */
+        float get_velocity_radians_per_second() const { return ticks_to_radians_per_second(get_velocity()); }
+
+        /**
+         * @brief Get the position of the encoder in radians.
+         *
+         * @return float The position in radians.
+         */
+        float get_position_radians() const { return ticks_to_radians(get_position()); }
+
+        /**
          * @brief Update the encoder values.
          *
          * @note This function should be called regularly to update the encoder values.
@@ -58,25 +72,25 @@ namespace roboost::motor_control
         /**
          * @brief Get the step increment in radians per tick.
          *
-         * @return double The step increment.
+         * @return float The step increment.
          */
-        inline double get_step_increment() const { return static_cast<const Derived*>(this)->get_step_increment(); }
+        inline float get_step_increment() const { return static_cast<const Derived*>(this)->get_step_increment(); }
 
         /**
          * @brief Convert ticks to radians.
          *
          * @param ticks The number of ticks.
-         * @return double The equivalent radians.
+         * @return float The equivalent radians.
          */
-        inline double ticks_to_radians(const int64_t& ticks) const { return ticks * get_step_increment(); }
+        inline float ticks_to_radians(const int64_t& ticks) const { return ticks * get_step_increment(); }
 
         /**
          * @brief Convert ticks/s to rad/s.
          *
          * @param ticks_per_second The velocity in ticks per second.
-         * @return double The equivalent radians per second.
+         * @return float The equivalent radians per second.
          */
-        inline double ticks_to_radians_per_second(const int64_t& ticks_per_second) const { return ticks_per_second * get_step_increment(); }
+        inline float ticks_to_radians_per_second(const int64_t& ticks_per_second) const { return ticks_per_second * get_step_increment(); }
     };
 
 #ifdef ESP32
@@ -119,9 +133,9 @@ namespace roboost::motor_control
         /**
          * @brief Get the step increment in radians per tick.
          *
-         * @return double The step increment.
+         * @return float The step increment.
          */
-        double get_step_increment() const { return step_increment_; }
+        float get_step_increment() const { return step_increment_; }
 
         /**
          * @brief Implementation of update() for the derived class.
@@ -143,8 +157,8 @@ namespace roboost::motor_control
         }
 
     private:
-        const uint16_t resolution_;   // number of steps per revolution
-        const double step_increment_; // in radians per step
+        const uint16_t resolution_;  // number of steps per revolution
+        const float step_increment_; // in radians per step
         const bool reverse_;
         volatile int64_t prev_count_;
         volatile int64_t position_ = 0;             // in ticks
@@ -154,54 +168,6 @@ namespace roboost::motor_control
     };
 
 #endif // ESP32
-
-    /**
-     * @brief Encoder placeholder for testing.
-     *
-     */
-    class DummyEncoder : public Encoder<DummyEncoder>
-    {
-    public:
-        /**
-         * @brief Construct a new DummyEncoder object
-         *
-         * @param resolution The resolution of the encoder.
-         */
-        DummyEncoder(const uint16_t& resolution) : resolution_(resolution), step_increment_(2.0 * M_PI / resolution) {}
-
-        /**
-         * @brief Implementation of get_velocity() for the derived class.
-         *
-         * @return int64_t The velocity in ticks/s.
-         */
-        int64_t get_velocity() const { return velocity_; }
-
-        /**
-         * @brief Implementation of get_position() for the derived class.
-         *
-         * @return int64_t The position in ticks.
-         */
-        int64_t get_position() const { return position_; }
-
-        /**
-         * @brief Get the step increment in radians per tick.
-         *
-         * @return double The step increment.
-         */
-        double get_step_increment() const { return step_increment_; }
-
-        /**
-         * @brief Implementation of update() for the derived class.
-         *
-         */
-        void update() { position_ += velocity_ * 10; } // Simulated update
-
-    private:
-        const uint16_t resolution_;
-        const double step_increment_;
-        int64_t position_ = 0; // in ticks
-        int64_t velocity_ = 1; // in ticks per second
-    };
 
 } // namespace roboost::motor_control
 
