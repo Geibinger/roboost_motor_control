@@ -1,8 +1,6 @@
 /**
  * @file robot_controller.hpp
- * @brief This file contains the RobotVelocityController class, which manages the
- * control of a robot's motors and implements odometry calculations based on its
- * kinematics model.
+ * @brief A controller for managing motors and controlling their speeds and positions.
  * @version 0.2
  * @date 2024-05-17
  */
@@ -10,68 +8,119 @@
 #ifndef ROBOT_CONTROLLER_HPP
 #define ROBOT_CONTROLLER_HPP
 
-#ifdef JOINTSTATECONTROLLER_H
-#error "joint_state_controller.hpp and robot_controller.hpp cannot be used at the same time!"
-#endif
-
-#include <roboost/kinematics/kinematics.hpp>
+#include <roboost/kinematics/base_kinematics.hpp>
 #include <roboost/motor_control/motor_control_manager.hpp>
-#include <roboost/utils/matrices.hpp>
+#include <roboost/motor_control/motor_controllers/motor_controller.hpp>
+#include <roboost/motor_control/motor_controllers/position_motor_controller.hpp>
+#include <roboost/motor_control/motor_controllers/simple_motor_controller.hpp>
+#include <roboost/motor_control/motor_controllers/velocity_motor_controller.hpp>
+#include <roboost/utils/logging.hpp>
+#include <stdint.h>
+#include <vector>
 
 namespace roboost
 {
-    namespace robot_controller
+    namespace motor_control
     {
-        template <typename MotorControllerType, typename KinematicsType>
-        class RobotVelocityController
+        /**
+         * @brief The RobotController class manages a collection of motors and their desired speeds or positions.
+         */
+        class RobotController
         {
         public:
-            RobotVelocityController(roboost::motor_control::MotorControllerManager<MotorControllerType>& motor_manager, KinematicsType& kinematics_model)
-                : motor_manager_(motor_manager), kinematics_model_(kinematics_model), robot_velocity_(roboost::math::ZeroVector<float>(3)), latest_command_(roboost::math::ZeroVector<float>(3))
+            /**
+             * @brief Construct a new Robot Controller object.
+             *
+             * @param motor_controllers An initializer list of MotorControllerBase pointers.
+             */
+            RobotController(std::initializer_list<MotorControllerBase*> motor_controllers) : motor_manager_(motor_controllers), kinematics_(nullptr) {}
+
+            /**
+             * @brief Set the desired speed or position for a specific motor.
+             *
+             * @param motor_index The index of the motor.
+             * @param desired_value The desired speed or position value.
+             */
+            void set_motor_target(const uint8_t motor_index, float desired_value) { motor_manager_.set_motor_target(motor_index, desired_value); }
+
+            /**
+             * @brief Set the desired speed or position for all motors.
+             *
+             * @param desired_value The desired speed or position value.
+             */
+            void set_all_motor_targets(float desired_value) { motor_manager_.set_all_motor_targets(desired_value); }
+
+            /**
+             * @brief Get the desired speed or position of a specific motor.
+             *
+             * @param motor_index The index of the motor.
+             * @return float The desired speed or position value.
+             */
+            float get_motor_target(const uint8_t motor_index) const { return motor_manager_.get_motor_target(motor_index); }
+
+            /**
+             * @brief Get the current measurement of a specific motor.
+             *
+             * @param motor_index The index of the motor.
+             * @return float The current measurement value.
+             */
+            float get_motor_measurement(const uint8_t motor_index) const { return motor_manager_.get_motor_measurement(motor_index); }
+
+            /**
+             * @brief Get the number of motors in the robot.
+             *
+             * @return uint8_t The number of motors.
+             */
+            uint8_t get_motor_count() const { return motor_manager_.get_motor_count(); }
+
+            /**
+             * @brief Update the motors to set the new desired targets (speed or position).
+             */
+            void update() { motor_manager_.update(); }
+
+            /**
+             * @brief Set the kinematics model for the robot.
+             *
+             * @param kinematics A pointer to the kinematics model.
+             */
+            void set_kinematics(kinematics::BaseKinematics* kinematics) { kinematics_ = kinematics; }
+
+            /**
+             * @brief Calculate the robot state using the kinematics model and wheel velocities.
+             *
+             * @param wheel_velocities The wheel velocities.
+             * @return A unique pointer to the calculated kinematic state.
+             */
+            std::unique_ptr<kinematics::BaseKinematicState> calculate_robot_state(const std::vector<float>& wheel_velocities) const
             {
+                if (kinematics_)
+                {
+                    return kinematics_->calculate_robot_state(wheel_velocities);
+                }
+                return nullptr;
             }
 
-            void update()
+            /**
+             * @brief Calculate the joint states (wheel velocities) using the kinematics model and robot state.
+             *
+             * @param robot_state The kinematic state of the robot.
+             * @return A vector of calculated joint states (wheel velocities).
+             */
+            std::vector<float> calculate_joint_states(const kinematics::BaseKinematicState& robot_state) const
             {
-                // TODO: TYPES???
-                roboost::math::Vector<float> desired_wheel_speeds = kinematics_model_.calculate_wheel_velocity(latest_command_);
-
-                int motor_count = motor_manager_.get_motor_count();
-                if (desired_wheel_speeds.size() != motor_count)
+                if (kinematics_)
                 {
-                    // Serial.println("Not enough motor controllers"); // TODO: Implement logging
-                    return;
+                    return kinematics_->calculate_joint_states(robot_state);
                 }
-
-                for (uint8_t i = 0; i < motor_count; ++i)
-                {
-                    motor_manager_.set_motor_speed(i, desired_wheel_speeds.at(i));
-                }
-                motor_manager_.update();
-
-                roboost::math::Vector<float> actual_wheel_speeds(motor_count);
-                for (uint8_t i = 0; i < motor_count; ++i)
-                {
-                    actual_wheel_speeds.at(i) = motor_manager_.get_motor_speed(i);
-                }
-
-                robot_velocity_ = kinematics_model_.calculate_robot_velocity(actual_wheel_speeds);
+                return {};
             }
-
-            roboost::math::Vector<float> get_robot_vel() const { return robot_velocity_; }
-
-            roboost::math::Vector<float> get_wheel_vel_setpoints() const { return kinematics_model_.calculate_wheel_velocity(latest_command_); }
-
-            void set_latest_command(const roboost::math::Vector<float>& latest_command) { latest_command_ = latest_command; }
 
         private:
-            roboost::motor_control::MotorControllerManager<MotorControllerType>& motor_manager_;
-            KinematicsType& kinematics_model_;
-
-            roboost::math::Vector<float> latest_command_;
-            roboost::math::Vector<float> robot_velocity_;
+            MotorControllerManager motor_manager_;
+            kinematics::BaseKinematics* kinematics_;
         };
-    } // namespace robot_controller
+
+    } // namespace motor_control
 } // namespace roboost
 
 #endif // ROBOT_CONTROLLER_HPP

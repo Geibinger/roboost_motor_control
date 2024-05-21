@@ -1,6 +1,6 @@
 /**
  * @file position_motor_controller.hpp
- * @brief Definition of MotorController, which sets the control output directly to the motor driver with encoder feedback and PID control.
+ * @brief Definition of PositionController, which sets the control output directly to the motor driver with encoder feedback and PID control.
  * @version 0.2
  * @date 2024-05-17
  */
@@ -20,18 +20,9 @@ namespace roboost
     namespace motor_control
     {
         /**
-         * @brief Implementation of MotorController, which sets the control output directly to the motor driver with encoder feedback and PID control.
-         *
-         * @tparam MotorDriverType The type of the motor driver.
-         * @tparam EncoderType The type of the encoder.
-         * @tparam ControllerType The type of the PID controller.
-         * @tparam InputFilterType The type of the input filter.
-         * @tparam OutputFilterType The type of the output filter.
-         * @tparam RateLimitingFilterType The type of the rate limiting filter.
+         * @brief Implementation of PositionController, which sets the control output directly to the motor driver with encoder feedback and PID control.
          */
-        template <typename MotorDriverType, typename EncoderType, typename ControllerType, typename InputFilterType, typename OutputFilterType, typename RateLimitingFilterType>
-        class PositionController
-            : public MotorControllerBase<PositionController<MotorDriverType, EncoderType, ControllerType, InputFilterType, OutputFilterType, RateLimitingFilterType>, MotorDriverType>
+        class PositionController : public MotorControllerBase
         {
         public:
             /**
@@ -46,11 +37,10 @@ namespace roboost
              * @param deadband_threshold The deadband threshold.
              * @param minimum_output The minimum output.
              */
-            PositionController(MotorDriverType& motor_driver, EncoderType& encoder, ControllerType& pid_controller, InputFilterType& input_filter, OutputFilterType& output_filter,
-                               RateLimitingFilterType& rate_limiting_filter, double deadband_threshold, double minimum_output)
-                : MotorControllerBase<PositionController<MotorDriverType, EncoderType, ControllerType, InputFilterType, OutputFilterType, RateLimitingFilterType>, MotorDriverType>(motor_driver),
-                  encoder_(encoder), pid_(pid_controller), input_filter_(input_filter), output_filter_(output_filter), rate_limiting_filter_(rate_limiting_filter),
-                  deadband_threshold_(deadband_threshold), minimum_output_(minimum_output), current_setpoint_(0.0)
+            PositionController(MotorDriverBase& motor_driver, EncoderBase& encoder, controllers::PIDController<float>& pid_controller, filters::FilterBase<float>& input_filter,
+                               filters::FilterBase<float>& output_filter, filters::FilterBase<float>& rate_limiting_filter, float deadband_threshold, float minimum_output)
+                : MotorControllerBase(motor_driver), encoder_(encoder), pid_(pid_controller), input_filter_(input_filter), output_filter_(output_filter), rate_limiting_filter_(rate_limiting_filter),
+                  deadband_threshold_(deadband_threshold), minimum_output_(minimum_output), current_setpoint_(0.0f)
             {
             }
 
@@ -59,48 +49,52 @@ namespace roboost
              *
              * @param desired_angle The desired position in radians.
              */
-            void set_target(double desired_angle)
+            void update(float desired_angle) override
             {
                 encoder_.update();
-                double input = encoder_.ticks_to_radians(encoder_.get_position());
+                float input = encoder_.ticks_to_radians(encoder_.get_position());
                 input = input_filter_.update(input);
 
                 current_setpoint_ = rate_limiting_filter_.update(desired_angle, input);
 
-                double output = pid_.update(current_setpoint_, input);
+                float output = pid_.update(current_setpoint_, input);
                 output = output_filter_.update(output);
 
                 // Adjust output for deadband and minimum output
                 if (fabs(output) < deadband_threshold_)
                 {
-                    output = 0.0;
+                    output = 0.0f;
                 }
                 else if (fabs(output) < minimum_output_)
                 {
                     output = minimum_output_ * (output / fabs(output));
                 }
 
-                this->motor_driver_.set_motor_control(static_cast<int32_t>(output));
+                // map output (-1 to 1) to PWM value (-PWM_RESOLUTION to PWM_RESOLUTION)
+                constexpr uint16_t pwm_factor = 1 << PWM_RESOLUTION;
+                int32_t control_value = static_cast<int32_t>(output * pwm_factor);
+
+                motor_driver_.set_motor_control(control_value);
             }
 
             /**
              * @brief Get the position of the motor.
              *
-             * @return double The position in radians.
+             * @return float The position in radians.
              */
-            double get_measurement() const { return encoder_.ticks_to_radians(encoder_.get_position()); }
+            float get_measurement() const override { return encoder_.ticks_to_radians(encoder_.get_position()); }
 
-            double get_setpoint() const { return current_setpoint_; }
+            float get_setpoint() const { return current_setpoint_; }
 
         private:
-            EncoderType& encoder_;
-            ControllerType& pid_;
-            InputFilterType& input_filter_;
-            OutputFilterType& output_filter_;
-            RateLimitingFilterType& rate_limiting_filter_;
-            double deadband_threshold_;
-            double minimum_output_;
-            double current_setpoint_;
+            EncoderBase& encoder_;
+            controllers::PIDController<float>& pid_;
+            filters::FilterBase<float>& input_filter_;
+            filters::FilterBase<float>& output_filter_;
+            filters::FilterBase<float>& rate_limiting_filter_;
+            float deadband_threshold_;
+            float minimum_output_;
+            float current_setpoint_;
         };
 
     } // namespace motor_control

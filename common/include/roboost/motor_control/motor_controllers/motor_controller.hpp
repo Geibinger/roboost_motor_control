@@ -16,11 +16,7 @@ namespace roboost
     {
         /**
          * @brief Abstract base class for controlling motors.
-         *
-         * @tparam Derived The derived class implementing the MotorController interface.
-         * @tparam MotorDriverType The type of the motor driver.
          */
-        template <typename Derived, typename MotorDriverType>
         class MotorControllerBase
         {
         public:
@@ -29,24 +25,15 @@ namespace roboost
              *
              * @param motor_driver A reference to the MotorDriver object that controls the motor.
              */
-            MotorControllerBase(MotorDriverType& motor_driver) : motor_driver_(motor_driver) {}
+            MotorControllerBase(MotorDriverBase& motor_driver) : motor_driver_(motor_driver) {}
+            virtual ~MotorControllerBase() = default;
 
-            /**
-             * @brief Set the desired rotation speed of the motor.
-             *
-             * @param target The desired rotation speed for the motor.
-             */
-            void set_target(double target) { static_cast<Derived*>(this)->set_target(target); }
+            virtual void update(float target) = 0;
 
-            /**
-             * @brief Get the current rotation speed of the motor.
-             *
-             * @return double The current rotation speed of the motor.
-             */
-            double get_measurement() const { return static_cast<const Derived*>(this)->get_measurement(); }
+            virtual float get_measurement() const = 0;
 
         protected:
-            MotorDriverType& motor_driver_;
+            MotorDriverBase& motor_driver_;
         };
 
     } // namespace motor_control

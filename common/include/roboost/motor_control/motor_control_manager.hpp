@@ -1,6 +1,6 @@
 /**
  * @file motor_control_manager.hpp
- * @brief A manager for controlling motors and managing their speeds.
+ * @brief A manager for controlling motors and managing their speeds and positions.
  * @version 0.2
  * @date 2024-05-17
  */
@@ -19,72 +19,90 @@ namespace roboost
     {
         /**
          * @brief The MotorControllerManager class manages a collection of motors and
-         *        their desired speeds.
+         *        their desired speeds or positions.
          */
-        template <typename MotorControllerType>
         class MotorControllerManager
         {
         public:
             /**
              * @brief Construct a new Motor Controller Manager object.
              *
-             * @param motor_controllers An initializer list of MotorController pointers.
+             * @param motor_controllers An initializer list of MotorControllerBase pointers.
              */
-            MotorControllerManager(std::initializer_list<MotorControllerType*> motor_controllers)
+            MotorControllerManager(std::initializer_list<MotorControllerBase*> motor_controllers)
             {
-                for (MotorControllerType* motor_controller : motor_controllers)
+                for (MotorControllerBase* motor_controller : motor_controllers)
                 {
-                    motor_controllers_.push_back({motor_controller, 0.0f});
+                    motor_controllers_.emplace_back(motor_controller, 0.0f);
                 }
             }
 
             /**
-             * @brief Set the desired speed for a specific motor.
+             * @brief Set the desired speed or position for a specific motor.
              *
              * @param motor_index The index of the motor.
-             * @param desired_speed The desired speed value.
+             * @param desired_value The desired speed or position value.
              */
-            void set_motor_speed(const uint8_t motor_index, int32_t desired_speed)
+            void set_motor_target(const uint8_t motor_index, float desired_value)
             {
-                if (motor_index < 0 || motor_index >= motor_controllers_.size())
+                if (motor_index < motor_controllers_.size())
                 {
-                    // Serial.println("Invalid motor index"); // TODO: Implement logging
+                    motor_controllers_[motor_index].second = desired_value;
                 }
                 else
                 {
-                    motor_controllers_[motor_index].second = desired_speed;
+                    // Logging or error handling can be done here.
                 }
             }
 
             /**
-             * @brief Set the desired speed for all motors.
+             * @brief Set the desired speed or position for all motors.
              *
-             * @param desired_speed The desired speed value.
+             * @param desired_value The desired speed or position value.
              */
-            void set_all_motor_speeds(int32_t desired_speed)
+            void set_all_motor_targets(float desired_value)
             {
                 for (auto& pair : motor_controllers_)
                 {
-                    pair.second = desired_speed;
+                    pair.second = desired_value;
                 }
             }
 
             /**
-             * @brief Get the desired speed of a specific motor.
+             * @brief Get the desired speed or position of a specific motor.
              *
              * @param motor_index The index of the motor.
-             * @return int32_t The desired speed value.
+             * @return float The desired speed or position value.
              */
-            int32_t get_motor_speed(const uint8_t motor_index) const
+            float get_motor_target(const uint8_t motor_index) const
             {
-                if (motor_index < 0 || motor_index >= motor_controllers_.size())
+                if (motor_index < motor_controllers_.size())
                 {
-                    // Serial.println("Invalid motor index"); // TODO: Implement logging
-                    return 0.0;
+                    return motor_controllers_[motor_index].second;
                 }
                 else
                 {
+                    // Logging or error handling can be done here.
+                    return 0.0f;
+                }
+            }
+
+            /**
+             * @brief Get the current measurement of a specific motor.
+             *
+             * @param motor_index The index of the motor.
+             * @return float The current measurement value.
+             */
+            float get_motor_measurement(const uint8_t motor_index) const
+            {
+                if (motor_index < motor_controllers_.size())
+                {
                     return motor_controllers_[motor_index].first->get_measurement();
+                }
+                else
+                {
+                    // Logging or error handling can be done here.
+                    return 0.0f;
                 }
             }
 
@@ -96,29 +114,18 @@ namespace roboost
             uint8_t get_motor_count() const { return motor_controllers_.size(); }
 
             /**
-             * @brief Update the MotorControllers to set the new desired rotational
-             * speed.
+             * @brief Update the MotorControllers to set the new desired target (speed or position).
              */
             void update()
             {
                 for (auto& pair : motor_controllers_)
                 {
-                    // Serial.print(">motor "); // TODO: Implement logging
-                    // Serial.print(i);
-                    // Serial.print(" setpoint:");
-                    // Serial.println(pair.second);
-                    // Serial.print(">motor ");
-                    // Serial.print(i);
-                    // Serial.print(" measured:");
-                    // Serial.println(pair.first->get_measurement());
-
-                    pair.first->set_target(pair.second);
+                    pair.first->update(pair.second);
                 }
             }
 
             /**
-             * @brief Destroy the Motor Controller Manager object and free up the
-             * memory.
+             * @brief Destroy the Motor Controller Manager object and free up the memory.
              */
             ~MotorControllerManager()
             {
@@ -129,7 +136,7 @@ namespace roboost
             }
 
         private:
-            std::vector<std::pair<MotorControllerType*, int32_t>> motor_controllers_; // The motor controllers and their desired speeds.
+            std::vector<std::pair<MotorControllerBase*, float>> motor_controllers_; // The motor controllers and their desired targets.
         };
 
     } // namespace motor_control

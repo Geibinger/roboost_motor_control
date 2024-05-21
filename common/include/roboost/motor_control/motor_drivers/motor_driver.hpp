@@ -1,6 +1,6 @@
 /**
  * @file motor_drivers.hpp
- * @brief Defines motor driver interfaces and implementations using the CRTP pattern.
+ * @brief Defines motor driver interfaces and implementations using dynamic polymorphism.
  * @version 0.3
  * @date 2024-05-17
  */
@@ -18,34 +18,32 @@ namespace roboost::motor_control
 {
 
     constexpr uint8_t PWM_RESOLUTION = UINT8_C(10);
-    constexpr uint32_t PWM_FREQUENCY = UINT32_C(1 << 11);
+    constexpr uint32_t PWM_FREQUENCY = UINT32_C(1 << 14);
 
 #ifdef ARDUINO
 
     /**
      * @class MotorDriverBase
-     * @brief Base class for CRTP motor drivers.
-     *
-     * @tparam Derived The derived motor driver class.
-     * @tparam Bits The number of bits for PWM resolution.
+     * @brief Base class for motor drivers.
      */
-    template <typename Derived>
     class MotorDriverBase
     {
     public:
+        virtual ~MotorDriverBase() = default;
+
         /**
          * @brief Set the motor control value.
          *
          * @param control_value The control value for the motor.
          */
-        void set_motor_control(int32_t control_value) { static_cast<Derived*>(this)->set_motor_control(control_value); }
+        virtual void set_motor_control(int32_t control_value) = 0;
 
         /**
          * @brief Get the motor control value.
          *
          * @return ControlValue The control value.
          */
-        int32_t get_motor_control() const { return static_cast<const Derived*>(this)->get_motor_control(); }
+        int32_t get_motor_control() const { return this->control_value_; }
 
     protected:
         volatile int32_t control_value_;
@@ -54,10 +52,8 @@ namespace roboost::motor_control
     /**
      * @class L298NMotorDriver
      * @brief Implementation of MotorDriver for L298N motor drivers.
-     *
-     * @tparam Bits The number of bits for PWM resolution.
      */
-    class L298NMotorDriver : public MotorDriverBase<L298NMotorDriver>
+    class L298NMotorDriver : public MotorDriverBase
     {
     public:
         /**
@@ -96,7 +92,7 @@ namespace roboost::motor_control
          * @param control_value The control value to be set.
          * It should be an integer where the sign determines the direction and the magnitude determines the amplitude.
          */
-        void set_motor_control(int32_t control_value)
+        void set_motor_control(int32_t control_value) override
         {
             this->control_value_ = control_value;
 
@@ -114,13 +110,6 @@ namespace roboost::motor_control
             analogWrite(pin_ena_, std::abs(control_value));
 #endif // ESP32
         }
-
-        /**
-         * @brief Get the motor control value.
-         *
-         * @return ControlValue The control value.
-         */
-        int32_t get_motor_control() const { return this->control_value_; }
 
     private:
         const uint8_t pin_in1_;
